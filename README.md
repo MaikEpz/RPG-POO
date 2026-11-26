@@ -2,7 +2,7 @@
 
 Este repositorio contiene un proyecto de consola en **C# (.NET 10)** diseñado para practicar **Programación Orientada a Objetos (POO)**: abstracción, herencia, encapsulación, polimorfismo, enumeraciones y composición/agregación.
 
-En esta guía aprenderás **paso a paso** cómo construir desde cero el archivo [`RPG/Program.cs`](RPG/Program.cs) para conectar todas las clases del juego ([`RPG/Clases/`](RPG/Clases/)) y dar vida a un combate por turnos con colores diferenciados en consola.
+En esta guía aprenderás **paso a paso** cómo construir desde cero el archivo `RPG/Program.cs` para conectar todas las clases del juego ([`RPG/Clases/`](RPG/Clases/)) y dar vida a un combate por turnos con colores diferenciados en consola.
 
 > 📐 Puedes consultar la arquitectura completa del proyecto en el [Diagrama de Clases](RPG/DiagramaClases.md).
 
@@ -26,7 +26,7 @@ Antes de escribir `Program.cs`, asegúrate de comprender qué piezas ya existen 
 
 ## 🚀 Cómo ejecutar el proyecto
 
-Desde la raíz del repositorio:
+Una vez que hayas creado el archivo `RPG/Program.cs` siguiendo los pasos de esta guía, ejecuta desde la raíz del repositorio:
 
 ```bash
 dotnet run --project RPG/RPG.csproj

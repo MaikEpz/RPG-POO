@@ -31,3 +31,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .DS_Store
+
+# Ejercicio para que el usuario cree su propio Program.cs
+RPG/Program.cs
