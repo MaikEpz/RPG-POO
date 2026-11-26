@@ -20,11 +20,6 @@ classDiagram
         RestoreMana
     }
 
-    %% Punto de entrada
-    class Program {
-        +Main(string[] args)$ void
-    }
-
     %% Jerarquía de Personajes
     class Character {
         <<abstract>>
@@ -150,11 +145,4 @@ classDiagram
     Warrior ..> SpellBook : rechaza
     Wizard ..> SpellBook : equipa
     Wizard ..> Listelement : usa
-    Program ..> Warrior : instancia
-    Program ..> Wizard : instancia
-    Program ..> Enemy : instancia
-    Program ..> Sword : instancia
-    Program ..> Axe : instancia
-    Program ..> SpellBook : instancia
-    Program ..> Skill : instancia
 ```
