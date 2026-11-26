@@ -7,6 +7,13 @@ namespace Parrex
 {
     public class Program
     {
+        private static void PrintColor(string texto, ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine(texto);
+            Console.ResetColor();
+        }
+
         public static void Main(string[] args)
         {
             Console.WriteLine("==================================================");
@@ -39,7 +46,7 @@ namespace Parrex
                     new Skill("Luz de Curación", 15, 35, SkillType.HealHealth)
                 };
                 jugador = mago;
-                Console.WriteLine("\n¡Has elegido al Mago!");
+                PrintColor("\n¡Has elegido al Mago!", ConsoleColor.Cyan);
             }
             else
             {
@@ -51,7 +58,7 @@ namespace Parrex
                     new Skill("Primeros Auxilios", 0, 25, SkillType.HealHealth)
                 };
                 jugador = guerrero;
-                Console.WriteLine("\n¡Has elegido al Guerrero!");
+                PrintColor("\n¡Has elegido al Guerrero!", ConsoleColor.Cyan);
             }
 
             // --------------------------------------------------------
@@ -59,7 +66,6 @@ namespace Parrex
             // --------------------------------------------------------
             Weapon[] armeria = new Weapon[]
             {
-                new Sword("Daga Ligera", 18, 5),
                 new Sword("Espada de Acero", 26, 10),
                 new Axe("Hacha Vorpal", 36, 20),
                 new Axe("Hacha Titánica Colosal", 55, 32),
@@ -100,7 +106,9 @@ namespace Parrex
             }
 
             Console.WriteLine("\n--- Ficha completa de tu personaje ---");
+            Console.ForegroundColor = ConsoleColor.Cyan;
             jugador.Info();
+            Console.ResetColor();
 
             // --------------------------------------------------------
             // 3. CREACIÓN DEL ENEMIGO
@@ -112,10 +120,10 @@ namespace Parrex
                 new Skill("Mordida Vampírica", 0, 28, SkillType.Damage)
             };
 
-            Console.WriteLine("¡Un enemigo salvaje ha aparecido!");
+            PrintColor("¡Un enemigo salvaje ha aparecido!", ConsoleColor.Red);
             if (enemigo.EquippedWeapon != null)
             {
-                Console.WriteLine($"Enemigo: {enemigo.NameChar} | Vida: {enemigo.LifePoint} | Arma: {enemigo.EquippedWeapon.Name}");
+                PrintColor($"Enemigo: {enemigo.NameChar} | Vida: {enemigo.LifePoint} | Arma: {enemigo.EquippedWeapon.Name}", ConsoleColor.Red);
             }
             Console.WriteLine();
 
@@ -131,12 +139,12 @@ namespace Parrex
             while (jugador.LifePoint > 0 && enemigo.LifePoint > 0)
             {
                 Console.WriteLine($"\n------------------- TURNO {turno} -------------------");
-                Console.WriteLine($"[TÚ]      {jugador.NameChar} - Vida: {jugador.LifePoint}");
+                PrintColor($"[TÚ]      {jugador.NameChar} - Vida: {jugador.LifePoint}", ConsoleColor.Cyan);
                 if (jugador is Wizard wiz)
                 {
-                    Console.WriteLine($"          Maná: {wiz.Manna}");
+                    PrintColor($"          Maná: {wiz.Manna}", ConsoleColor.Cyan);
                 }
-                Console.WriteLine($"[ENEMIGO] {enemigo.NameChar} - Vida: {enemigo.LifePoint}");
+                PrintColor($"[ENEMIGO] {enemigo.NameChar} - Vida: {enemigo.LifePoint}", ConsoleColor.Red);
                 Console.WriteLine("-------------------------------------------------");
                 Console.WriteLine("Elige tu acción:");
                 Console.WriteLine("1. Atacar con el arma equipada");
@@ -161,7 +169,9 @@ namespace Parrex
                     string? entradaSkill = Console.ReadLine();
                     if (int.TryParse(entradaSkill, out int numSkill) && numSkill >= 1 && numSkill <= jugador.Skills.Length)
                     {
+                        Console.ForegroundColor = ConsoleColor.Cyan;
                         jugador.UseSkill(numSkill - 1, target: enemigo);
+                        Console.ResetColor();
                     }
                     else
                     {
@@ -170,6 +180,7 @@ namespace Parrex
                 }
                 else
                 {
+                    Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine($"-> {jugador.NameChar} ataca:");
                     jugador.Attack();
                     int danioTotal = jugador.Attackpower;
@@ -177,40 +188,43 @@ namespace Parrex
                     {
                         danioTotal = danioTotal + jugador.EquippedWeapon.BaseDamage;
                     }
+                    Console.ForegroundColor = ConsoleColor.Red;
                     enemigo.TakeDamage(danioTotal);
+                    Console.ResetColor();
                 }
 
                 if (enemigo.LifePoint <= 0)
                 {
-                    Console.WriteLine("\n==================================================");
-                    Console.WriteLine($"¡VICTORIA! Has vencido a {enemigo.NameChar}.");
-                    Console.WriteLine("==================================================");
+                    PrintColor($"\n==================================================\n¡VICTORIA! Has vencido a {enemigo.NameChar}.\n==================================================", ConsoleColor.Green);
                     break;
                 }
 
                 // Turno del enemigo
-                Console.WriteLine($"\n--- Turno de {enemigo.NameChar} ---");
+                PrintColor($"\n--- Turno de {enemigo.NameChar} ---", ConsoleColor.Red);
                 if (turno % 2 == 0 && enemigo.Skills.Length > 0)
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"-> {enemigo.NameChar} utiliza una habilidad especial contra ti:");
                     enemigo.UseSkill(0, target: jugador);
+                    Console.ResetColor();
                 }
                 else
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     enemigo.Attack();
                     int danioEnemigo = enemigo.Attackpower;
                     if (enemigo.EquippedWeapon != null)
                     {
                         danioEnemigo = danioEnemigo + enemigo.EquippedWeapon.BaseDamage;
                     }
+                    Console.ForegroundColor = ConsoleColor.Cyan;
                     jugador.TakeDamage(danioEnemigo);
+                    Console.ResetColor();
                 }
 
                 if (jugador.LifePoint <= 0)
                 {
-                    Console.WriteLine("\n==================================================");
-                    Console.WriteLine("DERROTA: Has caído en batalla...");
-                    Console.WriteLine("==================================================");
+                    PrintColor("\n==================================================\nDERROTA: Has caído en batalla...\n==================================================", ConsoleColor.Red);
                     break;
                 }
 

@@ -2,7 +2,7 @@
 
 Este repositorio contiene un proyecto de consola en **C# (.NET 10)** diseñado para practicar **Programación Orientada a Objetos (POO)**: abstracción, herencia, encapsulación, polimorfismo, enumeraciones y composición/agregación.
 
-En esta guía aprenderás **paso a paso** cómo construir desde cero el archivo [`RPG/Program.cs`](RPG/Program.cs) para conectar todas las clases del juego ([`RPG/Clases/`](RPG/Clases/)) y dar vida a un combate por turnos.
+En esta guía aprenderás **paso a paso** cómo construir desde cero el archivo [`RPG/Program.cs`](RPG/Program.cs) para conectar todas las clases del juego ([`RPG/Clases/`](RPG/Clases/)) y dar vida a un combate por turnos con colores diferenciados en consola.
 
 > 📐 Puedes consultar la arquitectura completa del proyecto en el [Diagrama de Clases](RPG/DiagramaClases.md).
 
@@ -36,9 +36,9 @@ dotnet run --project RPG/RPG.csproj
 
 ## 🛠️ Paso a paso para construir `RPG/Program.cs`
 
-### Paso 0: Importar namespaces y crear la estructura base
+### Paso 0: Importar namespaces, helper de color y estructura base
 
-Como nuestras clases están repartidas en distintos *namespaces* (`Parrex`, `Mappe`, `harryppoter`, `Tetranova`), lo primero es importarlos con `using` para poder instanciar `Warrior`, `Wizard` y `Enemy` dentro del namespace `Parrex`.
+Como nuestras clases están repartidas en distintos *namespaces* (`Parrex`, `Mappe`, `harryppoter`, `Tetranova`), lo primero es importarlos con `using`. Además, añadimos un método auxiliar `PrintColor` para distinguir visualmente al **jugador (Cyan)** del **enemigo (Red)** sin modificar las clases de `RPG/Clases/`.
 
 ```csharp
 using System;
@@ -50,28 +50,34 @@ namespace Parrex
 {
     public class Program
     {
+        private static void PrintColor(string texto, ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine(texto);
+            Console.ResetColor();
+        }
+
         public static void Main(string[] args)
         {
             Console.WriteLine("==================================================");
             Console.WriteLine("         MINI RPG - DIAGRAMA OBJETIVO (POO)       ");
             Console.WriteLine("==================================================\n");
 
-            // Aquí iremos agregando cada bloque del juego...
+            // Aquí iremos agregando cada paso dentro de Main...
         }
     }
 }
 ```
 
-> 💡 **Concepto clave:** Los `using` permiten que `Program.cs` (en `Parrex`) reconozca clases definidas en otros namespaces sin tener que escribir su nombre completo cada vez.
+> 💡 **Concepto clave:** Los `using` permiten que `Program.cs` (en `Parrex`) reconozca clases definidas en otros namespaces, y `Console.ResetColor()` evita que el color se quede pegado en las siguientes líneas.
 
 ---
 
-### Paso 1: Selección de personaje (Polimorfismo y arreglos de habilidades)
+### Paso 1: Selección de personaje (Polimorfismo y habilidades)
 
-Queremos que el usuario elija entre ser un **Guerrero** o un **Mago**. Para no duplicar el resto del juego según la elección, declaramos una variable del tipo padre abstracto: `Character jugador;`.
+#### 1.1 Mostrar el menú y leer la elección del usuario
 
 ```csharp
-// 1. SELECCIÓN DE PERSONAJE
 Console.WriteLine("Selecciona tu héroe:");
 Console.WriteLine("1. Guerrero (Titan) - Fuerza: 25 | Vida: 130");
 Console.WriteLine("2. Mago (Itachi)     - Poder Mágico: 30 | Maná: 70 | Vida: 110");
@@ -84,7 +90,13 @@ if (eleccion != null)
 }
 
 Character jugador;
+```
 
+> 💡 **Polimorfismo:** Declarar `Character jugador;` permite guardar en la misma variable tanto un `Wizard` como un `Warrior`, porque ambos heredan de `Character`.
+
+#### 1.2 Instanciar la clase elegida y asignar su arreglo `Skill[]`
+
+```csharp
 if (eleccion == "2")
 {
     Wizard mago = new Wizard("Itachi", 20, 110, 'M', 30, 70, Listelement.fire);
@@ -95,7 +107,7 @@ if (eleccion == "2")
         new Skill("Luz de Curación", 15, 35, SkillType.HealHealth)
     };
     jugador = mago;
-    Console.WriteLine("\n¡Has elegido al Mago!");
+    PrintColor("\n¡Has elegido al Mago!", ConsoleColor.Cyan);
 }
 else
 {
@@ -107,33 +119,38 @@ else
         new Skill("Primeros Auxilios", 0, 25, SkillType.HealHealth)
     };
     jugador = guerrero;
-    Console.WriteLine("\n¡Has elegido al Guerrero!");
+    PrintColor("\n¡Has elegido al Guerrero!", ConsoleColor.Cyan);
 }
 ```
 
 > 💡 **Conceptos clave:**
-> - **Polimorfismo:** `jugador` es de tipo `Character`, pero en tiempo de ejecución apunta a un objeto `Wizard` o `Warrior`.
-> - **Agregación con arreglos:** Cada personaje recibe un arreglo `Skill[]` con sus habilidades propias.
-> - **Enumeraciones (`enum`):** `Listelement.fire` y `SkillType.Damage` evitan errores de escritura usando valores cerrados y legibles.
+> - **Agregación con arreglos:** Cada personaje recibe un `Skill[]` con sus habilidades.
+> - **Enumeraciones (`enum`):** `Listelement.fire` y `SkillType.Damage` usan valores cerrados y legibles.
 
 ---
 
-### Paso 2: Armería y validación polimórfica al equipar (`EquipWeapon`)
+### Paso 2: Armería y validación polimórfica al equipar
 
-Creamos un inventario de armas usando un arreglo polimórfico `Weapon[]` que mezcla objetos `Sword`, `Axe` y `SpellBook`. Después, usamos un bucle `while` hasta que el jugador elija un arma válida para su clase.
+#### 2.1 Definir el inventario de armas (`Weapon[]`)
+
+Creamos un arreglo polimórfico `Weapon[]` que mezcla `Sword`, `Axe` y `SpellBook`:
 
 ```csharp
-// 2. SELECCIÓN Y VALIDACIÓN DE ARMA SEGÚN EL PESO
 Weapon[] armeria = new Weapon[]
 {
-    new Sword("Daga Ligera", 18, 5),
     new Sword("Espada de Acero", 26, 10),
     new Axe("Hacha Vorpal", 36, 20),
     new Axe("Hacha Titánica Colosal", 55, 32),
     new SpellBook("Grimorio de las Sombras", 30, 5),
     new SpellBook("Tomo de la Tormenta", 42, 8)
 };
+```
 
+#### 2.2 Validar y equipar el arma en un bucle `while`
+
+Repetimos el menú hasta que `jugador.EquipWeapon(armaElegida)` devuelva `true`:
+
+```csharp
 bool armaEquipada = false;
 while (!armaEquipada)
 {
@@ -152,7 +169,6 @@ while (!armaEquipada)
         Weapon armaElegida = armeria[seleccion - 1];
         Console.WriteLine($"\nIntentando equipar '{armaElegida.Name}'...");
 
-        // Se valida automáticamente según la clase del personaje y el peso del arma:
         armaEquipada = jugador.EquipWeapon(armaElegida);
 
         if (!armaEquipada)
@@ -165,25 +181,29 @@ while (!armaEquipada)
         Console.WriteLine("Opción no válida. Por favor introduce un número de la lista.");
     }
 }
-
-Console.WriteLine("\n--- Ficha completa de tu personaje ---");
-jugador.Info();
 ```
 
-> 💡 **¿Por qué `jugador.EquipWeapon(armaElegida)` se comporta distinto según el héroe?**
-> Porque `EquipWeapon` es un método `virtual` en `Character` y está sobreescrito (`override`) en las subclases:
-> - **En `Warrior`:** Rechaza cualquier `SpellBook` (no usa maná) y exige `force >= weapon.Weight` (por ejemplo, Titan con fuerza `25` no puede levantar el *Hacha Titánica Colosal* de peso `32`).
-> - **En `Wizard`:** Acepta cualquier `SpellBook` o armas ligeras con `Weight <= 10`, pero rechaza las hachas pesadas.
-> - **En `jugador.Info()`:** También aplica polimorfismo, mostrando la información base más los atributos propios de `Warrior` o `Wizard`.
+> 💡 **¿Por qué `EquipWeapon(...)` valida diferente según el héroe?**
+> Es un método `virtual` sobreescrito (`override`):
+> - **`Warrior`:** Rechaza `SpellBook` y exige `force >= weapon.Weight` (Titan tiene fuerza `25`, así que no puede levantar el *Hacha Titánica Colosal* de peso `32`).
+> - **`Wizard`:** Acepta `SpellBook` o armas ligeras (`Weight <= 10`), pero rechaza las hachas pesadas.
+
+#### 2.3 Mostrar la ficha del personaje (`Info()`)
+
+```csharp
+Console.WriteLine("\n--- Ficha completa de tu personaje ---");
+Console.ForegroundColor = ConsoleColor.Cyan;
+jugador.Info();
+Console.ResetColor();
+```
 
 ---
 
 ### Paso 3: Creación del enemigo (`Enemy`)
 
-Ahora instanciamos al rival usando la clase `Enemy`, que también hereda de `Character`, y configuramos sus propiedades `EquippedWeapon` y `Skills`.
+Instanciamos al rival usando `Enemy` (que hereda de `Character`), le asignamos un arma y una habilidad, e imprimimos su presentación en rojo:
 
 ```csharp
-// 3. CREACIÓN DEL ENEMIGO
 Enemy enemigo = new Enemy("Drakula Oscuro", 20, 110, 'M');
 enemigo.EquippedWeapon = new Sword("Espada Sombra", 22, 12);
 enemigo.Skills = new Skill[]
@@ -191,10 +211,10 @@ enemigo.Skills = new Skill[]
     new Skill("Mordida Vampírica", 0, 28, SkillType.Damage)
 };
 
-Console.WriteLine("¡Un enemigo salvaje ha aparecido!");
+PrintColor("¡Un enemigo salvaje ha aparecido!", ConsoleColor.Red);
 if (enemigo.EquippedWeapon != null)
 {
-    Console.WriteLine($"Enemigo: {enemigo.NameChar} | Vida: {enemigo.LifePoint} | Arma: {enemigo.EquippedWeapon.Name}");
+    PrintColor($"Enemigo: {enemigo.NameChar} | Vida: {enemigo.LifePoint} | Arma: {enemigo.EquippedWeapon.Name}", ConsoleColor.Red);
 }
 Console.WriteLine();
 
@@ -203,32 +223,28 @@ Console.WriteLine("               ¡COMIENZA EL COMBATE!              ");
 Console.WriteLine("==================================================");
 ```
 
-> 💡 **Concepto clave:** `Enemy` no tuvo que volver a programar `NameChar`, `LifePoint`, `EquippedWeapon`, `Skills` ni `TakeDamage()`; los reutiliza directamente por **herencia** desde `Character`.
+> 💡 **Concepto clave:** `Enemy` reutiliza `NameChar`, `LifePoint`, `EquippedWeapon`, `Skills` y `TakeDamage()` directamente por **herencia** desde `Character`.
 
 ---
 
 ### Paso 4: El bucle de combate por turnos (`while`)
 
-El combate continúa mientras ambos personajes tengan vida (`jugador.LifePoint > 0 && enemigo.LifePoint > 0`). En cada iteración:
-1. Se muestra el estado actual (usando `jugador is Wizard wiz` para mostrar el maná solo si el jugador es un mago).
-2. El jugador decide entre atacar con su arma (`jugador.Attack()`) o usar una habilidad (`jugador.UseSkill(...)`).
-3. Si el enemigo cae (`enemigo.LifePoint <= 0`), termina el combate con victoria.
-4. Si sigue vivo, el enemigo toma su turno (alternando su habilidad en turnos pares y ataque básico en impares).
-5. Se verifica si el jugador cayó y se incrementa el contador `turno`.
+#### 4.1 Iniciar el bucle y mostrar el estado del turno
+
+El combate sigue mientras ambos tengan vida (`> 0`). Usamos `jugador is Wizard wiz` (*pattern matching*) para mostrar el maná solo cuando el héroe es mago:
 
 ```csharp
 int turno = 1;
 
-// 4. BUCLE DE COMBATE POR TURNOS
 while (jugador.LifePoint > 0 && enemigo.LifePoint > 0)
 {
     Console.WriteLine($"\n------------------- TURNO {turno} -------------------");
-    Console.WriteLine($"[TÚ]      {jugador.NameChar} - Vida: {jugador.LifePoint}");
+    PrintColor($"[TÚ]      {jugador.NameChar} - Vida: {jugador.LifePoint}", ConsoleColor.Cyan);
     if (jugador is Wizard wiz)
     {
-        Console.WriteLine($"          Maná: {wiz.Manna}");
+        PrintColor($"          Maná: {wiz.Manna}", ConsoleColor.Cyan);
     }
-    Console.WriteLine($"[ENEMIGO] {enemigo.NameChar} - Vida: {enemigo.LifePoint}");
+    PrintColor($"[ENEMIGO] {enemigo.NameChar} - Vida: {enemigo.LifePoint}", ConsoleColor.Red);
     Console.WriteLine("-------------------------------------------------");
     Console.WriteLine("Elige tu acción:");
     Console.WriteLine("1. Atacar con el arma equipada");
@@ -241,7 +257,13 @@ while (jugador.LifePoint > 0 && enemigo.LifePoint > 0)
         opcion = opcion.Trim();
     }
     Console.WriteLine();
+```
 
+#### 4.2 Turno del jugador: usar habilidad o atacar con arma
+
+Dentro del mismo `while`, si elige `"2"` ejecuta una habilidad con `UseSkill(...)`; de lo contrario ataca con `Attack()` y aplica el daño al enemigo (`TakeDamage`):
+
+```csharp
     if (opcion == "2")
     {
         Console.WriteLine("--- Tus Habilidades ---");
@@ -253,7 +275,9 @@ while (jugador.LifePoint > 0 && enemigo.LifePoint > 0)
         string? entradaSkill = Console.ReadLine();
         if (int.TryParse(entradaSkill, out int numSkill) && numSkill >= 1 && numSkill <= jugador.Skills.Length)
         {
+            Console.ForegroundColor = ConsoleColor.Cyan;
             jugador.UseSkill(numSkill - 1, target: enemigo);
+            Console.ResetColor();
         }
         else
         {
@@ -262,6 +286,7 @@ while (jugador.LifePoint > 0 && enemigo.LifePoint > 0)
     }
     else
     {
+        Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine($"-> {jugador.NameChar} ataca:");
         jugador.Attack();
         int danioTotal = jugador.Attackpower;
@@ -269,40 +294,51 @@ while (jugador.LifePoint > 0 && enemigo.LifePoint > 0)
         {
             danioTotal = danioTotal + jugador.EquippedWeapon.BaseDamage;
         }
+        Console.ForegroundColor = ConsoleColor.Red;
         enemigo.TakeDamage(danioTotal);
+        Console.ResetColor();
     }
+```
 
+> 💡 **Seguridad ante nulos y encapsulación:** Comprobamos `if (jugador.EquippedWeapon != null)` antes de leer `BaseDamage`, y usamos `TakeDamage(...)` para que el propio objeto controle sus límites de vida.
+
+#### 4.3 Verificar victoria, turno del enemigo y derrota
+
+Cerramos el `while` comprobando si el enemigo cayó, ejecutando su turno (habilidad en turnos pares, ataque normal en impares) y verificando si el jugador sobrevivió:
+
+```csharp
     if (enemigo.LifePoint <= 0)
     {
-        Console.WriteLine("\n==================================================");
-        Console.WriteLine($"¡VICTORIA! Has vencido a {enemigo.NameChar}.");
-        Console.WriteLine("==================================================");
+        PrintColor($"\n==================================================\n¡VICTORIA! Has vencido a {enemigo.NameChar}.\n==================================================", ConsoleColor.Green);
         break;
     }
 
     // Turno del enemigo
-    Console.WriteLine($"\n--- Turno de {enemigo.NameChar} ---");
+    PrintColor($"\n--- Turno de {enemigo.NameChar} ---", ConsoleColor.Red);
     if (turno % 2 == 0 && enemigo.Skills.Length > 0)
     {
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"-> {enemigo.NameChar} utiliza una habilidad especial contra ti:");
         enemigo.UseSkill(0, target: jugador);
+        Console.ResetColor();
     }
     else
     {
+        Console.ForegroundColor = ConsoleColor.Red;
         enemigo.Attack();
         int danioEnemigo = enemigo.Attackpower;
         if (enemigo.EquippedWeapon != null)
         {
             danioEnemigo = danioEnemigo + enemigo.EquippedWeapon.BaseDamage;
         }
+        Console.ForegroundColor = ConsoleColor.Cyan;
         jugador.TakeDamage(danioEnemigo);
+        Console.ResetColor();
     }
 
     if (jugador.LifePoint <= 0)
     {
-        Console.WriteLine("\n==================================================");
-        Console.WriteLine("DERROTA: Has caído en batalla...");
-        Console.WriteLine("==================================================");
+        PrintColor("\n==================================================\nDERROTA: Has caído en batalla...\n==================================================", ConsoleColor.Red);
         break;
     }
 
@@ -311,11 +347,6 @@ while (jugador.LifePoint > 0 && enemigo.LifePoint > 0)
 
 Console.WriteLine("\nFin del juego.");
 ```
-
-> 💡 **Conceptos clave en el bucle de combate:**
-> - **Pattern Matching (`is`):** `if (jugador is Wizard wiz)` verifica de forma segura si el `Character` actual es un `Wizard` para acceder a `wiz.Manna`.
-> - **Encapsulación:** Nunca modificamos `lifePoint` directamente desde `Program.cs`; usamos `TakeDamage(...)` y `UseSkill(...)` para que cada objeto controle sus propias reglas (como no bajar de 0 ni exceder la vida máxima, y descontar el maná).
-> - **Seguridad ante nulos:** Antes de sumar `BaseDamage`, comprobamos `if (jugador.EquippedWeapon != null)` para evitar errores de referencia nula.
 
 ---
 
@@ -334,6 +365,13 @@ namespace Parrex
 {
     public class Program
     {
+        private static void PrintColor(string texto, ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine(texto);
+            Console.ResetColor();
+        }
+
         public static void Main(string[] args)
         {
             Console.WriteLine("==================================================");
@@ -366,7 +404,7 @@ namespace Parrex
                     new Skill("Luz de Curación", 15, 35, SkillType.HealHealth)
                 };
                 jugador = mago;
-                Console.WriteLine("\n¡Has elegido al Mago!");
+                PrintColor("\n¡Has elegido al Mago!", ConsoleColor.Cyan);
             }
             else
             {
@@ -378,7 +416,7 @@ namespace Parrex
                     new Skill("Primeros Auxilios", 0, 25, SkillType.HealHealth)
                 };
                 jugador = guerrero;
-                Console.WriteLine("\n¡Has elegido al Guerrero!");
+                PrintColor("\n¡Has elegido al Guerrero!", ConsoleColor.Cyan);
             }
 
             // --------------------------------------------------------
@@ -386,7 +424,6 @@ namespace Parrex
             // --------------------------------------------------------
             Weapon[] armeria = new Weapon[]
             {
-                new Sword("Daga Ligera", 18, 5),
                 new Sword("Espada de Acero", 26, 10),
                 new Axe("Hacha Vorpal", 36, 20),
                 new Axe("Hacha Titánica Colosal", 55, 32),
@@ -412,6 +449,7 @@ namespace Parrex
                     Weapon armaElegida = armeria[seleccion - 1];
                     Console.WriteLine($"\nIntentando equipar '{armaElegida.Name}'...");
 
+                    // Se valida automáticamente según la clase del personaje y el peso del arma:
                     armaEquipada = jugador.EquipWeapon(armaElegida);
 
                     if (!armaEquipada)
@@ -426,7 +464,9 @@ namespace Parrex
             }
 
             Console.WriteLine("\n--- Ficha completa de tu personaje ---");
+            Console.ForegroundColor = ConsoleColor.Cyan;
             jugador.Info();
+            Console.ResetColor();
 
             // --------------------------------------------------------
             // 3. CREACIÓN DEL ENEMIGO
@@ -438,10 +478,10 @@ namespace Parrex
                 new Skill("Mordida Vampírica", 0, 28, SkillType.Damage)
             };
 
-            Console.WriteLine("¡Un enemigo salvaje ha aparecido!");
+            PrintColor("¡Un enemigo salvaje ha aparecido!", ConsoleColor.Red);
             if (enemigo.EquippedWeapon != null)
             {
-                Console.WriteLine($"Enemigo: {enemigo.NameChar} | Vida: {enemigo.LifePoint} | Arma: {enemigo.EquippedWeapon.Name}");
+                PrintColor($"Enemigo: {enemigo.NameChar} | Vida: {enemigo.LifePoint} | Arma: {enemigo.EquippedWeapon.Name}", ConsoleColor.Red);
             }
             Console.WriteLine();
 
@@ -457,12 +497,12 @@ namespace Parrex
             while (jugador.LifePoint > 0 && enemigo.LifePoint > 0)
             {
                 Console.WriteLine($"\n------------------- TURNO {turno} -------------------");
-                Console.WriteLine($"[TÚ]      {jugador.NameChar} - Vida: {jugador.LifePoint}");
+                PrintColor($"[TÚ]      {jugador.NameChar} - Vida: {jugador.LifePoint}", ConsoleColor.Cyan);
                 if (jugador is Wizard wiz)
                 {
-                    Console.WriteLine($"          Maná: {wiz.Manna}");
+                    PrintColor($"          Maná: {wiz.Manna}", ConsoleColor.Cyan);
                 }
-                Console.WriteLine($"[ENEMIGO] {enemigo.NameChar} - Vida: {enemigo.LifePoint}");
+                PrintColor($"[ENEMIGO] {enemigo.NameChar} - Vida: {enemigo.LifePoint}", ConsoleColor.Red);
                 Console.WriteLine("-------------------------------------------------");
                 Console.WriteLine("Elige tu acción:");
                 Console.WriteLine("1. Atacar con el arma equipada");
@@ -487,7 +527,9 @@ namespace Parrex
                     string? entradaSkill = Console.ReadLine();
                     if (int.TryParse(entradaSkill, out int numSkill) && numSkill >= 1 && numSkill <= jugador.Skills.Length)
                     {
+                        Console.ForegroundColor = ConsoleColor.Cyan;
                         jugador.UseSkill(numSkill - 1, target: enemigo);
+                        Console.ResetColor();
                     }
                     else
                     {
@@ -496,6 +538,7 @@ namespace Parrex
                 }
                 else
                 {
+                    Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine($"-> {jugador.NameChar} ataca:");
                     jugador.Attack();
                     int danioTotal = jugador.Attackpower;
@@ -503,40 +546,43 @@ namespace Parrex
                     {
                         danioTotal = danioTotal + jugador.EquippedWeapon.BaseDamage;
                     }
+                    Console.ForegroundColor = ConsoleColor.Red;
                     enemigo.TakeDamage(danioTotal);
+                    Console.ResetColor();
                 }
 
                 if (enemigo.LifePoint <= 0)
                 {
-                    Console.WriteLine("\n==================================================");
-                    Console.WriteLine($"¡VICTORIA! Has vencido a {enemigo.NameChar}.");
-                    Console.WriteLine("==================================================");
+                    PrintColor($"\n==================================================\n¡VICTORIA! Has vencido a {enemigo.NameChar}.\n==================================================", ConsoleColor.Green);
                     break;
                 }
 
                 // Turno del enemigo
-                Console.WriteLine($"\n--- Turno de {enemigo.NameChar} ---");
+                PrintColor($"\n--- Turno de {enemigo.NameChar} ---", ConsoleColor.Red);
                 if (turno % 2 == 0 && enemigo.Skills.Length > 0)
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"-> {enemigo.NameChar} utiliza una habilidad especial contra ti:");
                     enemigo.UseSkill(0, target: jugador);
+                    Console.ResetColor();
                 }
                 else
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     enemigo.Attack();
                     int danioEnemigo = enemigo.Attackpower;
                     if (enemigo.EquippedWeapon != null)
                     {
                         danioEnemigo = danioEnemigo + enemigo.EquippedWeapon.BaseDamage;
                     }
+                    Console.ForegroundColor = ConsoleColor.Cyan;
                     jugador.TakeDamage(danioEnemigo);
+                    Console.ResetColor();
                 }
 
                 if (jugador.LifePoint <= 0)
                 {
-                    Console.WriteLine("\n==================================================");
-                    Console.WriteLine("DERROTA: Has caído en batalla...");
-                    Console.WriteLine("==================================================");
+                    PrintColor("\n==================================================\nDERROTA: Has caído en batalla...\n==================================================", ConsoleColor.Red);
                     break;
                 }
 
